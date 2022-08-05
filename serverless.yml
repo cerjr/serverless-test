@@ -1,0 +1,78 @@
+service: serverless-test
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  profile: serverless 
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - 'dynamodb:PutItem'
+            - 'dynamodb:Get*'
+            - 'dynamodb:Scan*'
+            - 'dynamodb:UpdateItem'
+            - 'dynamodb:DeleteItem'
+          Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:provider.environment.DYNAMODB_TABLE}
+  environment:
+    DYNAMODB_TABLE: tb-${self:service}
+
+plugins:
+  - serverless-step-functions
+
+functions:
+  functionA:
+    handler: handler.functionA
+
+  functionB:
+    handler: handler.functionB  
+
+  functionC:
+    handler: handler.functionC   
+  
+  createCustomer:
+    handler: createCustomer.createCustomer
+    events:
+      - httpApi:
+          path: /
+          method: post
+
+stepFunctions:
+  stateMachines:
+    flow:
+      events:
+        - http:
+            path: /start
+            method: post
+      definition:
+        Comment: "An example of the Amazon States Language using wait states"
+        StartAt: FirstState
+        States:
+          FirstState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [functionA, Arn]
+            Next: FinalState
+          FinalState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [functionB, Arn]
+            End: true
+      
+
+resources:
+  Resources:
+    CustomerTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: primary_key
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: primary_key
+            KeyType: HASH
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
