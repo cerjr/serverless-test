@@ -36,7 +36,7 @@ functions:
   createCustomer:
     handler: createCustomer.createCustomer
     events:
-      - httpApi:
+      - http:
           path: /
           method: post
 
@@ -55,11 +55,21 @@ stepFunctions:
             Type: Task
             Resource:
               Fn::GetAtt: [functionA, Arn]
-            Next: FinalState
-          FinalState:
+            Next: MidState
+          MidState:
             Type: Task
             Resource:
               Fn::GetAtt: [functionB, Arn]
+            Retry:
+              - ErrorEquals:
+                - MustRetryError
+                IntervalSeconds: 60
+                MaxAttempts: 2
+            Next: FinalState  
+          FinalState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [functionC, Arn]
             End: true
       
 
