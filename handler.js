@@ -1,17 +1,15 @@
 'use strict';
 
 const AWS = require('aws-sdk');
+const { MustRetryError } = require('./errors');
 
 module.exports.functionA = async (event) => {
   return {
     statusCode: 200,
-    body: JSON.stringify(
+    body: jsonAsString(
       {
         value: event,
-      },
-      null,
-      2
-    ),
+      }),
   };
 };
 
@@ -31,25 +29,16 @@ module.exports.functionB = async (event) => {
   console.log(reg.Item);
 
   if (!reg["Item"]) {
-    function MustRetryError(message) {
-        this.name = 'MustRetryError';
-        this.message = message;
-    }
-    MustRetryError.prototype = new Error();
-
     throw new MustRetryError('This is a custom error!');
   }
 
   return {
     statusCode: 200,
-    body: JSON.stringify(
+    body: jsonAsString(
       {
         input: event,
         value: reg["Item"]
-      },
-      null,
-      2
-    ),
+      }),
   };
 };
 
@@ -74,18 +63,21 @@ module.exports.functionC = async (event) => {
     ReturnValues: "UPDATED_NEW",
   }
 
-
   const reg = await dynamoDb.update(params).promise()
 
   return {
     statusCode: 200,
-    body: JSON.stringify(
-      {
-        input: event,
-        value: reg.Item
-      },
-      null,
-      2
-    ),
-  };
+    body: jsonAsString({
+      input: event,
+      value: reg.Item
+    }) 
+  }
 };
+
+function jsonAsString(obj) {
+  return JSON.stringify(
+    obj,
+    null,
+    2
+  );
+}

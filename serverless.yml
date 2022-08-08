@@ -40,6 +40,9 @@ functions:
           path: /
           method: post
 
+# https://www.serverless.com/plugins/serverless-step-functions#sample-statemachines-setting-in-serverlessyml
+# https://docs.aws.amazon.com/step-functions/latest/dg/tutorial-handling-error-conditions.html
+# https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html
 stepFunctions:
   stateMachines:
     flow:
